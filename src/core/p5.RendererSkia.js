@@ -211,10 +211,10 @@ p5.RendererSkia.prototype._getTintedImageCanvas = function(img) {
     const g = pixels[i + 1];
     const b = pixels[i + 2];
     const a = pixels[i + 3];
-    newPixels[i] = r * this._tint[0] / 255;
-    newPixels[i + 1] = g * this._tint[1] / 255;
-    newPixels[i + 2] = b * this._tint[2] / 255;
-    newPixels[i + 3] = a * this._tint[3] / 255;
+    newPixels[i] = (r * this._tint[0]) / 255;
+    newPixels[i + 1] = (g * this._tint[1]) / 255;
+    newPixels[i + 2] = (b * this._tint[2]) / 255;
+    newPixels[i + 3] = (a * this._tint[3]) / 255;
   }
   tmpCtx.putImageData(id, 0, 0);
   return tmpCanvas;
@@ -522,9 +522,9 @@ p5.RendererSkia.prototype.ellipse = function(args) {
   }
   const kappa = 0.5522847498,
     // control point offset horizontal
-    ox = w / 2 * kappa,
+    ox = (w / 2) * kappa,
     // control point offset vertical
-    oy = h / 2 * kappa,
+    oy = (h / 2) * kappa,
     // x-end
     xe = x + w,
     // y-end

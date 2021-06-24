@@ -156,7 +156,7 @@ p5.Graphics.prototype.reset = function() {
  *   // draw the background
  *   if (bg) {
  *     image(bg, frameCount % 100, 0);
- *     image(bg, frameCount % 100 - 100, 0);
+ *     image(bg, (frameCount % 100) - 100, 0);
  *   }
  *   // draw the foreground
  *   let p = p5.Vector.fromAngle(t, 35).add(50, 50);
