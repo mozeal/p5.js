@@ -76,15 +76,18 @@ function setup() {
 // sequence and after the last line is read, the first
 // line is executed again.
 function draw() {
-  drawFrame(canvasSurface.getCanvas());
+  let cv = canvasSurface.getCanvas();
+  drawFrame(cv);
   canvasSurface.flush();
-  /*
+
+  drawFrame(surface.getCanvas());
   const img = surface.makeImageSnapshot();
   if (!img) {
     console.error('no snapshot');
     return;
   }
- 
+  cv.drawImage(img, 100, 100, null);
+  /*
   const subCanvas = surface.getCanvas();
   drawFrame(subCanvas);
   const img = surface.makeImageSnapshot();
