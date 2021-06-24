@@ -1,0 +1,1 @@
+../../SkiaApps/modules/canvaskit/npm_build/bin/canvaskit.js

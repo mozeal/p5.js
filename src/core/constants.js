@@ -29,6 +29,14 @@ export const P2D = 'p2d';
  */
 export const WEBGL = 'webgl';
 
+/**
+ * A custom render modes in p5.js: SKIA
+ * Render by Skia's CanvasKit
+ * @property {String} SKIA
+ * @final
+ */
+export const SKIA = 'skia';
+
 // ENVIRONMENT
 /**
  * @property {String} ARROW

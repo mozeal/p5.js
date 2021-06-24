@@ -13,6 +13,7 @@ import './core/p5.Element';
 import './core/p5.Graphics';
 import './core/p5.Renderer';
 import './core/p5.Renderer2D';
+import './core/p5.RendererSkia';
 import './core/rendering';
 import './core/shim';
 import './core/structure';

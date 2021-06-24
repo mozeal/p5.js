@@ -49,6 +49,8 @@ p5.Graphics = function(w, h, renderer, pInst) {
 
   if (r === constants.WEBGL) {
     this._renderer = new p5.RendererGL(this.canvas, this, false);
+  } else if (r === constants.SKIA) {
+    this._renderer = new p5.RendererSkia(this.canvas, this, false);
   } else {
     this._renderer = new p5.Renderer2D(this.canvas, this, false);
   }
