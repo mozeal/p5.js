@@ -12,49 +12,6 @@ import './p5.Renderer';
 const styleEmpty = 'rgba(0,0,0,0)';
 // const alphaThreshold = 0.00125; // minimum visible
 
-function drawFrame(canvas) {
-  //canvas.clear(CanvasKit.WHITE);
-  const paint = new CanvasKit.Paint();
-  paint.setStrokeWidth(1.0);
-  paint.setAntiAlias(true);
-  paint.setColor(CanvasKit.Color(0, 0, 0, 1.0));
-  paint.setStyle(CanvasKit.PaintStyle.Stroke);
-
-  const path = new CanvasKit.Path();
-  path.moveTo(20, 5);
-  path.lineTo(30, 20);
-  path.lineTo(40, 10);
-  path.lineTo(50, 20);
-  path.lineTo(60, 0);
-  path.lineTo(20, 5);
-
-  path.moveTo(20, 80);
-  path.cubicTo(90, 10, 160, 150, 190, 10);
-
-  path.moveTo(36, 148);
-  path.quadTo(66, 188, 120, 136);
-  path.lineTo(36, 148);
-
-  path.moveTo(150, 180);
-  path.arcToTangent(150, 100, 50, 200, 20);
-  path.lineTo(160, 160);
-
-  path.moveTo(20, 120);
-  path.lineTo(20, 120);
-
-  canvas.drawPath(path, paint);
-
-  const rrect = CanvasKit.RRectXY([100, 10, 140, 62], 10, 4);
-
-  const rrectPath = new CanvasKit.Path().addRRect(rrect, true);
-
-  canvas.drawPath(rrectPath, paint);
-
-  rrectPath.delete();
-  path.delete();
-  paint.delete();
-}
-
 p5.RendererSkia = function(elt, pInst, isMainCanvas) {
   //console.log('RendererSkia', elt);
   p5.Renderer.call(this, elt, pInst, isMainCanvas);
@@ -64,16 +21,17 @@ p5.RendererSkia = function(elt, pInst, isMainCanvas) {
   this._cached_canvas = this._canvasSurface.getCanvas();
 
   this._skStrokeColor = CanvasKit.BLACK;
+  this._skStrokeWidth = 1;
   this._skStrokePaint = new CanvasKit.Paint();
   this._skStrokePaint.setStyle(CanvasKit.PaintStyle.Stroke);
-  this._skStrokePaint.setStrokeWidth(1);
+  this._skStrokePaint.setStrokeWidth(this._skStrokeWidth);
   this._skStrokePaint.setAntiAlias(true);
   this._skStrokePaint.setColor(this._skStrokeColor);
 
   this._skFillColor = CanvasKit.WHITE;
-  this._skFillColor = new CanvasKit.Paint();
-  this._skFillColor.setStyle(CanvasKit.PaintStyle.Fill);
-  this._skFillColor.setColor(this._skFillColor);
+  this._skFillPaint = new CanvasKit.Paint();
+  this._skFillPaint.setStyle(CanvasKit.PaintStyle.Fill);
+  this._skFillPaint.setColor(this._skFillColor);
 
   /*
   this.drawingContext =
@@ -94,7 +52,6 @@ p5.RendererSkia.prototype.postDraw = function() {
     this._cached_canvas = this._canvasSurface.getCanvas();
   }
 
-  drawFrame(this._cached_canvas);
   this._canvasSurface.flush();
 };
 
@@ -600,20 +557,20 @@ p5.RendererSkia.prototype.line = function(x1, y1, x2, y2) {
 };
 
 p5.RendererSkia.prototype.point = function(x, y) {
-  const ctx = this.drawingContext;
-  if (!this._doStroke) {
-    return this;
-  } else if (this._getStroke() === styleEmpty) {
-    return this;
-  }
-  const s = this._getStroke();
-  const f = this._getFill();
-  // swapping fill color to stroke and back after for correct point rendering
-  this._setFill(s);
-  ctx.beginPath();
-  ctx.arc(x, y, ctx.lineWidth / 2, 0, constants.TWO_PI, false);
-  ctx.fill();
-  this._setFill(f);
+  this._skStrokePaint.setStyle(CanvasKit.PaintStyle.Fill);
+  this._cached_canvas.drawCircle(
+    x,
+    y,
+    this._skStrokeWidth / 2,
+    this._skStrokePaint
+  );
+  this._skStrokePaint.setStyle(CanvasKit.PaintStyle.Stroke);
+  this._cached_canvas.drawCircle(
+    x,
+    y,
+    this._skStrokeWidth / 2,
+    this._skStrokePaint
+  );
 };
 
 p5.RendererSkia.prototype.quad = function(x1, y1, x2, y2, x3, y3, x4, y4) {
@@ -665,11 +622,11 @@ p5.RendererSkia.prototype.rect = function(args) {
       return this;
     }
   }
-  ctx.beginPath();
+  const path = new CanvasKit.Path();
 
   if (typeof tl === 'undefined') {
     // No rounded corners
-    ctx.rect(x, y, w, h);
+    path.addRect(CanvasKit.XYWHRect(x, y, w, h));
   } else {
     // At least one rounded corner
     // Set defaults when not specified
@@ -716,19 +673,17 @@ p5.RendererSkia.prototype.rect = function(args) {
     }
 
     // Draw shape
-    ctx.beginPath();
-    ctx.moveTo(x + tl, y);
-    ctx.arcTo(x + w, y, x + w, y + h, tr);
-    ctx.arcTo(x + w, y + h, x, y + h, br);
-    ctx.arcTo(x, y + h, x, y, bl);
-    ctx.arcTo(x, y, x + w, y, tl);
-    ctx.closePath();
+    path.moveTo(x + tl, y);
+    path.arcToTangent(x + w, y, x + w, y + h, tr);
+    path.arcToTangent(x + w, y + h, x, y + h, br);
+    path.arcToTangent(x, y + h, x, y, bl);
+    path.arcToTangent(x, y, x + w, y, tl);
   }
   if (this._doFill) {
-    ctx.fill();
+    this._cached_canvas.drawPath(path, this._skFillPaint);
   }
   if (this._doStroke) {
-    ctx.stroke();
+    this._cached_canvas.drawPath(path, this._skStrokePaint);
   }
   return this;
 };
@@ -1051,11 +1006,11 @@ p5.RendererSkia.prototype.strokeJoin = function(join) {
 
 p5.RendererSkia.prototype.strokeWeight = function(w) {
   if (typeof w === 'undefined' || w === 0) {
-    // hack because lineWidth 0 doesn't work
-    this.drawingContext.lineWidth = 0.0001;
+    this._skStrokeWidth = 1;
   } else {
-    this.drawingContext.lineWidth = w;
+    this._skStrokeWidth = w;
   }
+  this._skStrokePaint.setStrokeWidth(this._skStrokeWidth);
   return this;
 };
 

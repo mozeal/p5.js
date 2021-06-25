@@ -64,6 +64,7 @@ p5.Renderer = function(elt, pInst, isMainCanvas) {
   this._skStrokeColor = CanvasKit.BLACK;
   this._skFillPaint = null;
   this._skStrokePaint = null;
+  this._skStrokeWidth = 1;
 };
 
 p5.Renderer.prototype = Object.create(p5.Element.prototype);

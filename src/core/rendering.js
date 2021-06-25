@@ -55,7 +55,7 @@ const defaultClass = 'p5Canvas';
 p5.prototype.createCanvas = function(w, h, renderer) {
   p5._validateParameters('createCanvas', arguments);
   //optional: renderer, otherwise defaults to p2d
-  const r = renderer || constants.P2D;
+  const r = renderer || constants.SKIA;
   let c;
 
   if (r === constants.WEBGL) {
