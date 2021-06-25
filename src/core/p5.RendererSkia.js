@@ -1203,7 +1203,7 @@ p5.RendererSkia.prototype.textWidth = function(s) {
 };
 
 p5.RendererSkia.prototype._applyTextProperties = function() {
-  let font;
+  //let font;
   const p = this._pInst;
 
   this._setProperty('_textAscent', null);

@@ -1,4 +1,3 @@
-
 let y;
 
 // The statements in the setup() function
