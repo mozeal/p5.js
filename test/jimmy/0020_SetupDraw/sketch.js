@@ -6,7 +6,7 @@ function setup() {
   // createCanvas must be the first statement
   createCanvas(720, 400, SKIA);
 
-  stroke(128); // Set line drawing color to white
+  stroke(255); // Set line drawing color to white
   frameRate(30);
 }
 
@@ -15,7 +15,8 @@ function setup() {
 // sequence and after the last line is read, the first
 // line is executed again.
 function draw() {
-  background(0); // Set the background to black
+  background(128); // Set the background to black
+
   y = y - 1;
   if (y < 0) {
     y = height;

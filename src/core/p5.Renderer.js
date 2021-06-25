@@ -60,6 +60,10 @@ p5.Renderer = function(elt, pInst, isMainCanvas) {
 
   this._canvasSurface = null;
   this._cached_canvas = null;
+  this._skFillColor = CanvasKit.WHITE;
+  this._skStrokeColor = CanvasKit.BLACK;
+  this._skFillPaint = null;
+  this._skStrokePaint = null;
 };
 
 p5.Renderer.prototype = Object.create(p5.Element.prototype);
@@ -343,7 +347,7 @@ p5.Renderer.prototype.text = function(str, x, y, maxWidth, maxHeight) {
 
     const vAlign = p.textAlign().vertical;
     if (vAlign === constants.CENTER) {
-      offset = (lines.length - 1) * p.textLeading() / 2;
+      offset = ((lines.length - 1) * p.textLeading()) / 2;
     } else if (vAlign === constants.BOTTOM) {
       offset = (lines.length - 1) * p.textLeading();
     }

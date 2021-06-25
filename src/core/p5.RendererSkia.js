@@ -13,7 +13,7 @@ const styleEmpty = 'rgba(0,0,0,0)';
 // const alphaThreshold = 0.00125; // minimum visible
 
 function drawFrame(canvas) {
-  canvas.clear(CanvasKit.WHITE);
+  //canvas.clear(CanvasKit.WHITE);
   const paint = new CanvasKit.Paint();
   paint.setStrokeWidth(1.0);
   paint.setAntiAlias(true);
@@ -59,7 +59,22 @@ p5.RendererSkia = function(elt, pInst, isMainCanvas) {
   //console.log('RendererSkia', elt);
   p5.Renderer.call(this, elt, pInst, isMainCanvas);
   this.drawingContext = this.canvas.getContext('2d');
+
   this._canvasSurface = CanvasKit.MakeSWCanvasSurface(this.canvas);
+  this._cached_canvas = this._canvasSurface.getCanvas();
+
+  this._skStrokeColor = CanvasKit.BLACK;
+  this._skStrokePaint = new CanvasKit.Paint();
+  this._skStrokePaint.setStyle(CanvasKit.PaintStyle.Stroke);
+  this._skStrokePaint.setStrokeWidth(1);
+  this._skStrokePaint.setAntiAlias(true);
+  this._skStrokePaint.setColor(this._skStrokeColor);
+
+  this._skFillColor = CanvasKit.WHITE;
+  this._skFillColor = new CanvasKit.Paint();
+  this._skFillColor.setStyle(CanvasKit.PaintStyle.Fill);
+  this._skFillColor.setColor(this._skFillColor);
+
   /*
   this.drawingContext =
     this.canvas.getContext('webgl', this._pInst._glAttributes) ||
@@ -99,7 +114,17 @@ p5.RendererSkia.prototype.resize = function(w, h) {
     this._pInst._pixelDensity
   );
   this._canvasSurface = CanvasKit.MakeSWCanvasSurface(this.canvas);
-  this._cached_canvas = null;
+  this._cached_canvas = this._canvasSurface.getCanvas();
+};
+
+p5.RendererSkia.prototype.toSkColor = function(...args) {
+  const _col = this._pInst.color(...args);
+  const _r = _col.levels[0] / 255;
+  const _g = _col.levels[1] / 255;
+  const _b = _col.levels[2] / 255;
+  const _a = _col.levels[3] / 255;
+  //console.log(_r, _g, _b, _a);
+  return CanvasKit.Color4f(_r, _g, _b, _a);
 };
 
 //////////////////////////////////////////////
@@ -107,64 +132,23 @@ p5.RendererSkia.prototype.resize = function(w, h) {
 //////////////////////////////////////////////
 
 p5.RendererSkia.prototype.background = function(...args) {
-  this.drawingContext.save();
-  this.resetMatrix();
-
-  if (args[0] instanceof p5.Image) {
-    this._pInst.image(args[0], 0, 0, this.width, this.height);
-  } else {
-    const curFill = this._getFill();
-    // create background rect
-    const color = this._pInst.color(...args);
-
-    //accessible Outputs
-    if (this._pInst._addAccsOutput()) {
-      this._pInst._accsBackground(color.levels);
-    }
-
-    const newFill = color.toString();
-    this._setFill(newFill);
-
-    if (this._isErasing) {
-      this.blendMode(this._cachedBlendMode);
-    }
-
-    this.drawingContext.fillRect(0, 0, this.width, this.height);
-    // reset fill
-    this._setFill(curFill);
-
-    if (this._isErasing) {
-      this._pInst.erase();
-    }
-  }
-  this.drawingContext.restore();
+  let color = this.toSkColor(...args);
+  this._cached_canvas.clear(color);
 };
 
 p5.RendererSkia.prototype.clear = function() {
-  this.drawingContext.save();
-  this.resetMatrix();
-  this.drawingContext.clearRect(0, 0, this.width, this.height);
-  this.drawingContext.restore();
+  let color = CanvasKit.TRANSPARENT;
+  this._cached_canvas.clear(color);
 };
 
 p5.RendererSkia.prototype.fill = function(...args) {
-  const color = this._pInst.color(...args);
-  this._setFill(color.toString());
-
-  //accessible Outputs
-  if (this._pInst._addAccsOutput()) {
-    this._pInst._accsCanvasColors('fill', color.levels);
-  }
+  this._skFillColor = this.toSkColor(...args);
+  this._skFillPaint.setColor(this._skFillColor);
 };
 
 p5.RendererSkia.prototype.stroke = function(...args) {
-  const color = this._pInst.color(...args);
-  this._setStroke(color.toString());
-
-  //accessible Outputs
-  if (this._pInst._addAccsOutput()) {
-    this._pInst._accsCanvasColors('stroke', color.levels);
-  }
+  this._skStrokeColor = this.toSkColor(...args);
+  this._skStrokePaint.setColor(this._skStrokeColor);
 };
 
 p5.RendererSkia.prototype.erase = function(opacityFill, opacityStroke) {
@@ -610,16 +594,8 @@ p5.RendererSkia.prototype.ellipse = function(args) {
 };
 
 p5.RendererSkia.prototype.line = function(x1, y1, x2, y2) {
-  const ctx = this.drawingContext;
-  if (!this._doStroke) {
-    return this;
-  } else if (this._getStroke() === styleEmpty) {
-    return this;
-  }
-  ctx.beginPath();
-  ctx.moveTo(x1, y1);
-  ctx.lineTo(x2, y2);
-  ctx.stroke();
+  this._cached_canvas.drawLine(x1, y1, x2, y2, this._skStrokePaint);
+
   return this;
 };
 
