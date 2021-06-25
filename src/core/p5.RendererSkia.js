@@ -15,9 +15,16 @@ const styleEmpty = 'rgba(0,0,0,0)';
 p5.RendererSkia = function(elt, pInst, isMainCanvas) {
   //console.log('RendererSkia', elt);
   p5.Renderer.call(this, elt, pInst, isMainCanvas);
-  this.drawingContext = this.canvas.getContext('2d');
+  //this.drawingContext = this.canvas.getContext('2d');
+  //this.drawingContext =
+  //  this.canvas.getContext('webgl', this._pInst._glAttributes) ||
+  //  this.canvas.getContext('experimental-webgl', this._pInst._glAttributes);
 
-  this._canvasSurface = CanvasKit.MakeSWCanvasSurface(this.canvas);
+  if (isMainCanvas) {
+    this._canvasSurface = CanvasKit.MakeSWCanvasSurface(this.canvas);
+  } else {
+    this._canvasSurface = CanvasKit.MakeSurface(100, 100);
+  }
   this._cached_canvas = this._canvasSurface.getCanvas();
 
   this._skStrokeColor = CanvasKit.BLACK;
@@ -31,6 +38,7 @@ p5.RendererSkia = function(elt, pInst, isMainCanvas) {
   this._skFillColor = CanvasKit.WHITE;
   this._skFillPaint = new CanvasKit.Paint();
   this._skFillPaint.setStyle(CanvasKit.PaintStyle.Fill);
+  this._skFillPaint.setAntiAlias(true);
   this._skFillPaint.setColor(this._skFillColor);
 
   /*
@@ -39,7 +47,9 @@ p5.RendererSkia = function(elt, pInst, isMainCanvas) {
     this.canvas.getContext('experimental-webgl', this._pInst._glAttributes); 
   */
   this._pInst._setProperty('drawingContext', this.drawingContext);
-  this._pInst.registerMethod('post', this.postDraw.bind(this));
+  if (isMainCanvas) {
+    this._pInst.registerMethod('post', this.postDraw.bind(this));
+  }
   return this;
 };
 
@@ -60,16 +70,18 @@ p5.RendererSkia.prototype._applyDefaults = function() {
   this._cachedBlendMode = constants.BLEND;
   this._setFill(constants._DEFAULT_FILL);
   this._setStroke(constants._DEFAULT_STROKE);
-  this.drawingContext.lineCap = constants.ROUND;
-  this.drawingContext.font = 'normal 12px sans-serif';
+  //this.drawingContext.lineCap = constants.ROUND;
+  //this.drawingContext.font = 'normal 12px sans-serif';
 };
 
 p5.RendererSkia.prototype.resize = function(w, h) {
   p5.Renderer.prototype.resize.call(this, w, h);
+  /*
   this.drawingContext.scale(
     this._pInst._pixelDensity,
     this._pInst._pixelDensity
   );
+  */
   this._canvasSurface = CanvasKit.MakeSWCanvasSurface(this.canvas);
   this._cached_canvas = this._canvasSurface.getCanvas();
 };
@@ -110,6 +122,7 @@ p5.RendererSkia.prototype.stroke = function(...args) {
 
 p5.RendererSkia.prototype.erase = function(opacityFill, opacityStroke) {
   if (!this._isErasing) {
+    /*
     // cache the fill style
     this._cachedFillStyle = this.drawingContext.fillStyle;
     const newFill = this._pInst.color(255, opacityFill).toString();
@@ -119,7 +132,7 @@ p5.RendererSkia.prototype.erase = function(opacityFill, opacityStroke) {
     this._cachedStrokeStyle = this.drawingContext.strokeStyle;
     const newStroke = this._pInst.color(255, opacityStroke).toString();
     this.drawingContext.strokeStyle = newStroke;
-
+    */
     //cache blendMode
     const tempBlendMode = this._cachedBlendMode;
     this.blendMode(constants.REMOVE);
@@ -131,8 +144,8 @@ p5.RendererSkia.prototype.erase = function(opacityFill, opacityStroke) {
 
 p5.RendererSkia.prototype.noErase = function() {
   if (this._isErasing) {
-    this.drawingContext.fillStyle = this._cachedFillStyle;
-    this.drawingContext.strokeStyle = this._cachedStrokeStyle;
+    //this.drawingContext.fillStyle = this._cachedFillStyle;
+    //this.drawingContext.strokeStyle = this._cachedStrokeStyle;
 
     this.blendMode(this._cachedBlendMode);
     this._isErasing = false;
@@ -154,6 +167,16 @@ p5.RendererSkia.prototype.image = function(
   dWidth,
   dHeight
 ) {
+  if (img._renderer && img._renderer._canvasSurface) {
+    //console.log(img._renderer._canvasSurface);
+    const image = img._renderer._canvasSurface.makeImageSnapshot();
+    if (!image) {
+      //console.error('no snapshot');
+      return;
+    }
+    this._cached_canvas.drawImage(image, dx, dy, null);
+    return;
+  }
   let cnv;
   if (img.gifProperties) {
     img._animateGif(this._pInst);
@@ -303,15 +326,19 @@ p5.RendererSkia.prototype.set = function(x, y, imgOrCol) {
   y = Math.floor(y);
   const pixelsState = this._pixelsState;
   if (imgOrCol instanceof p5.Image) {
+    /*
     this.drawingContext.save();
     this.drawingContext.setTransform(1, 0, 0, 1, 0, 0);
+    
     this.drawingContext.scale(
       pixelsState._pixelDensity,
       pixelsState._pixelDensity
     );
+    
     this.drawingContext.clearRect(x, y, imgOrCol.width, imgOrCol.height);
     this.drawingContext.drawImage(imgOrCol.canvas, x, y);
     this.drawingContext.restore();
+    */
   } else {
     let r = 0,
       g = 0,
@@ -508,7 +535,6 @@ p5.RendererSkia.prototype.arc = function(x, y, w, h, start, stop, mode) {
 };
 
 p5.RendererSkia.prototype.ellipse = function(args) {
-  const ctx = this.drawingContext;
   const doFill = this._doFill,
     doStroke = this._doStroke;
   const x = parseFloat(args[0]),
@@ -524,29 +550,19 @@ p5.RendererSkia.prototype.ellipse = function(args) {
       return this;
     }
   }
-  const kappa = 0.5522847498,
-    // control point offset horizontal
-    ox = (w / 2) * kappa,
-    // control point offset vertical
-    oy = (h / 2) * kappa,
-    // x-end
-    xe = x + w,
-    // y-end
-    ye = y + h,
-    // x-middle
-    xm = x + w / 2,
-    ym = y + h / 2; // y-middle
-  ctx.beginPath();
-  ctx.moveTo(x, ym);
-  ctx.bezierCurveTo(x, ym - oy, xm - ox, y, xm, y);
-  ctx.bezierCurveTo(xm + ox, y, xe, ym - oy, xe, ym);
-  ctx.bezierCurveTo(xe, ym + oy, xm + ox, ye, xm, ye);
-  ctx.bezierCurveTo(xm - ox, ye, x, ym + oy, x, ym);
-  if (doFill) {
-    ctx.fill();
+  if (this._doFill) {
+    //this._cached_canvas.drawPath(path, this._skFillPaint);
+    this._cached_canvas.drawOval(
+      CanvasKit.XYWHRect(x, y, w, h),
+      this._skFillPaint
+    );
   }
-  if (doStroke) {
-    ctx.stroke();
+  if (this._doStroke) {
+    //this._cached_canvas.drawPath(path, this._skStrokePaint);
+    this._cached_canvas.drawOval(
+      CanvasKit.XYWHRect(x, y, w, h),
+      this._skStrokePaint
+    );
   }
 };
 
@@ -610,7 +626,6 @@ p5.RendererSkia.prototype.rect = function(args) {
   let tr = args[5];
   let br = args[6];
   let bl = args[7];
-  const ctx = this.drawingContext;
   const doFill = this._doFill,
     doStroke = this._doStroke;
   if (doFill && !doStroke) {
@@ -988,7 +1003,7 @@ p5.RendererSkia.prototype.strokeCap = function(cap) {
     cap === constants.SQUARE ||
     cap === constants.PROJECT
   ) {
-    this.drawingContext.lineCap = cap;
+    //this.drawingContext.lineCap = cap;
   }
   return this;
 };
@@ -1016,29 +1031,29 @@ p5.RendererSkia.prototype.strokeWeight = function(w) {
 
 p5.RendererSkia.prototype._getFill = function() {
   if (!this._cachedFillStyle) {
-    this._cachedFillStyle = this.drawingContext.fillStyle;
+    //this._cachedFillStyle = this.drawingContext.fillStyle;
   }
   return this._cachedFillStyle;
 };
 
 p5.RendererSkia.prototype._setFill = function(fillStyle) {
   if (fillStyle !== this._cachedFillStyle) {
-    this.drawingContext.fillStyle = fillStyle;
+    //this.drawingContext.fillStyle = fillStyle;
     this._cachedFillStyle = fillStyle;
   }
 };
 
 p5.RendererSkia.prototype._getStroke = function() {
   if (!this._cachedStrokeStyle) {
-    this._cachedStrokeStyle = this.drawingContext.strokeStyle;
+    //this._cachedStrokeStyle = this.drawingContext.strokeStyle;
   }
   return this._cachedStrokeStyle;
 };
 
 p5.RendererSkia.prototype._setStroke = function(strokeStyle) {
   if (strokeStyle !== this._cachedStrokeStyle) {
-    this.drawingContext.strokeStyle = strokeStyle;
-    this._cachedStrokeStyle = strokeStyle;
+    //this.drawingContext.strokeStyle = strokeStyle;
+    //this._cachedStrokeStyle = strokeStyle;
   }
 };
 
@@ -1088,11 +1103,14 @@ p5.RendererSkia.prototype.applyMatrix = function(a, b, c, d, e, f) {
 };
 
 p5.RendererSkia.prototype.resetMatrix = function() {
+  /*
   this.drawingContext.setTransform(1, 0, 0, 1, 0, 0);
+  
   this.drawingContext.scale(
     this._pInst._pixelDensity,
     this._pInst._pixelDensity
   );
+  */
   return this;
 };
 
@@ -1101,7 +1119,7 @@ p5.RendererSkia.prototype.rotate = function(rad) {
 };
 
 p5.RendererSkia.prototype.scale = function(x, y) {
-  this.drawingContext.scale(x, y);
+  //this.drawingContext.scale(x, y);
   return this;
 };
 
@@ -1198,6 +1216,7 @@ p5.RendererSkia.prototype._applyTextProperties = function() {
     this._setProperty('_textStyle', this._textFont.font.styleName);
   }
 
+  /*
   this.drawingContext.font = `${this._textStyle || 'normal'} ${this._textSize ||
     12}px ${font || 'sans-serif'}`;
 
@@ -1207,6 +1226,7 @@ p5.RendererSkia.prototype._applyTextProperties = function() {
   } else {
     this.drawingContext.textBaseline = this._textBaseline;
   }
+  */
 
   return p;
 };
@@ -1235,8 +1255,8 @@ p5.RendererSkia.prototype.push = function() {
 p5.RendererSkia.prototype.pop = function(style) {
   this.drawingContext.restore();
   // Re-cache the fill / stroke state
-  this._cachedFillStyle = this.drawingContext.fillStyle;
-  this._cachedStrokeStyle = this.drawingContext.strokeStyle;
+  //this._cachedFillStyle = this.drawingContext.fillStyle;
+  //this._cachedStrokeStyle = this.drawingContext.strokeStyle;
 
   p5.Renderer.prototype.pop.call(this, style);
 };

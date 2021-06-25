@@ -23,7 +23,7 @@ import * as constants from './constants';
  * @param {p5} [pInst]          pointer to p5 instance
  */
 p5.Graphics = function(w, h, renderer, pInst) {
-  const r = renderer || constants.P2D;
+  const r = renderer || constants.SKIA;
 
   this.canvas = document.createElement('canvas');
   const node = pInst._userNode || document.body;

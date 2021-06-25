@@ -58,7 +58,7 @@ p5.prototype.createCanvas = function(w, h, renderer) {
   const r = renderer || constants.SKIA;
   let c;
 
-  if (r === constants.WEBGL) {
+  if (r === constants.WEBGL || r === constants.SKIA) {
     c = document.getElementById(defaultId);
     if (c) {
       //if defaultCanvas already exists
