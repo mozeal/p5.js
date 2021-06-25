@@ -36,7 +36,7 @@ const defaultClass = 'p5Canvas';
  * @method createCanvas
  * @param  {Number} w width of the canvas
  * @param  {Number} h height of the canvas
- * @param  {Constant} [renderer] either P2D or WEBGL
+ * @param  {Constant} [renderer] either P2D, SKIA or WEBGL
  * @return {p5.Renderer}
  * @example
  * <div>
@@ -105,9 +105,13 @@ p5.prototype.createCanvas = function(w, h, renderer) {
   }
 
   // Init our graphics renderer
-  //webgl mode
   if (r === constants.WEBGL) {
+    //webgl mode
     this._setProperty('_renderer', new p5.RendererGL(c, this, true));
+    this._elements.push(this._renderer);
+  } else if (r === constants.SKIA) {
+    //Skia mode
+    this._setProperty('_renderer', new p5.RendererSkia(c, this, true));
     this._elements.push(this._renderer);
   } else {
     //P2D mode
@@ -209,7 +213,7 @@ p5.prototype.noCanvas = function() {
  * @method createGraphics
  * @param  {Number} w width of the offscreen graphics buffer
  * @param  {Number} h height of the offscreen graphics buffer
- * @param  {Constant} [renderer] either P2D or WEBGL
+ * @param  {Constant} [renderer] either P2D, SKIA or WEBGL
  *                               undefined defaults to p2d
  * @return {p5.Graphics} offscreen graphics buffer
  * @example

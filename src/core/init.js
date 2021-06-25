@@ -14,10 +14,7 @@ import { initialize as initTranslator } from './internationalization';
  * @return {Undefined}
  */
 
-var CanvasKit = null;
-
 const _globalInit = () => {
-  console.log('Global Init');
   // Could have been any property defined within the p5 constructor.
   // If that property is already a part of the global object,
   // this code has already run before, likely due to a duplicate import
@@ -36,7 +33,6 @@ const _globalInit = () => {
         (window.draw && typeof window.draw === 'function')) &&
       !p5.instance
     ) {
-      console.log('Create P5');
       new p5();
     }
   }
@@ -45,8 +41,6 @@ const _globalInit = () => {
 // make a promise that resolves when the document is ready
 const waitForDocumentReady = () =>
   new Promise((resolve, reject) => {
-    console.log('init');
-
     // if the page is ready, initialize p5 immediately
     if (document.readyState === 'complete') {
       resolve();
@@ -65,9 +59,8 @@ const ckLoaded = CanvasKitInit({
   locateFile: file => '../../../canvaskit/' + file
 });
 ckLoaded.then(CK => {
-  CanvasKit = CK;
   window.CanvasKit = CK;
-  console.log('CanvasKit OK', CanvasKit);
+  //console.log('CanvasKit loaded successsfully');
 });
 
 Promise.all([ckLoaded, waitForDocumentReady(), waitingForTranslator]).then(

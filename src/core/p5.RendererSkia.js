@@ -12,15 +12,76 @@ import './p5.Renderer';
 const styleEmpty = 'rgba(0,0,0,0)';
 // const alphaThreshold = 0.00125; // minimum visible
 
+function drawFrame(canvas) {
+  canvas.clear(CanvasKit.WHITE);
+  const paint = new CanvasKit.Paint();
+  paint.setStrokeWidth(1.0);
+  paint.setAntiAlias(true);
+  paint.setColor(CanvasKit.Color(0, 0, 0, 1.0));
+  paint.setStyle(CanvasKit.PaintStyle.Stroke);
+
+  const path = new CanvasKit.Path();
+  path.moveTo(20, 5);
+  path.lineTo(30, 20);
+  path.lineTo(40, 10);
+  path.lineTo(50, 20);
+  path.lineTo(60, 0);
+  path.lineTo(20, 5);
+
+  path.moveTo(20, 80);
+  path.cubicTo(90, 10, 160, 150, 190, 10);
+
+  path.moveTo(36, 148);
+  path.quadTo(66, 188, 120, 136);
+  path.lineTo(36, 148);
+
+  path.moveTo(150, 180);
+  path.arcToTangent(150, 100, 50, 200, 20);
+  path.lineTo(160, 160);
+
+  path.moveTo(20, 120);
+  path.lineTo(20, 120);
+
+  canvas.drawPath(path, paint);
+
+  const rrect = CanvasKit.RRectXY([100, 10, 140, 62], 10, 4);
+
+  const rrectPath = new CanvasKit.Path().addRRect(rrect, true);
+
+  canvas.drawPath(rrectPath, paint);
+
+  rrectPath.delete();
+  path.delete();
+  paint.delete();
+}
+
 p5.RendererSkia = function(elt, pInst, isMainCanvas) {
-  console.log('RendererSkia');
+  //console.log('RendererSkia', elt);
   p5.Renderer.call(this, elt, pInst, isMainCanvas);
   this.drawingContext = this.canvas.getContext('2d');
+  this._canvasSurface = CanvasKit.MakeSWCanvasSurface(this.canvas);
+  /*
+  this.drawingContext =
+    this.canvas.getContext('webgl', this._pInst._glAttributes) ||
+    this.canvas.getContext('experimental-webgl', this._pInst._glAttributes); 
+  */
   this._pInst._setProperty('drawingContext', this.drawingContext);
+  this._pInst.registerMethod('post', this.postDraw.bind(this));
   return this;
 };
 
 p5.RendererSkia.prototype = Object.create(p5.Renderer.prototype);
+
+p5.RendererSkia.prototype.postDraw = function() {
+  //console.log('testPost', this);
+  //console.log(this._canvasSurface);
+  if (!this._cached_canvas) {
+    this._cached_canvas = this._canvasSurface.getCanvas();
+  }
+
+  drawFrame(this._cached_canvas);
+  this._canvasSurface.flush();
+};
 
 p5.RendererSkia.prototype._applyDefaults = function() {
   this._cachedFillStyle = this._cachedStrokeStyle = undefined;
@@ -37,6 +98,8 @@ p5.RendererSkia.prototype.resize = function(w, h) {
     this._pInst._pixelDensity,
     this._pInst._pixelDensity
   );
+  this._canvasSurface = CanvasKit.MakeSWCanvasSurface(this.canvas);
+  this._cached_canvas = null;
 };
 
 //////////////////////////////////////////////

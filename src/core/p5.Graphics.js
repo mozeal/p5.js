@@ -19,7 +19,7 @@ import * as constants from './constants';
  * @extends p5.Element
  * @param {Number} w            width
  * @param {Number} h            height
- * @param {Constant} renderer   the renderer to use, either P2D or WEBGL
+ * @param {Constant} renderer   the renderer to use, either P2D, SKIA or WEBGL
  * @param {p5} [pInst]          pointer to p5 instance
  */
 p5.Graphics = function(w, h, renderer, pInst) {
