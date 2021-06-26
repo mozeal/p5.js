@@ -6,6 +6,7 @@ let skcanvas;
 let img;
 
 function drawFrame(canvas) {
+  canvas.clear(CanvasKit.Color(1, 1, 1, 1.0));
   const paint = new CanvasKit.Paint();
   paint.setStrokeWidth(1.0);
   paint.setAntiAlias(true);
