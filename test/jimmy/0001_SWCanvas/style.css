@@ -1,0 +1,15 @@
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background-color: lightgray;
+}
+
+img {
+  border: solid 1px;
+}
+
+canvas {
+  border: solid 1px;
+  display: inline-block;
+}
