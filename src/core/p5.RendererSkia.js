@@ -25,8 +25,10 @@ p5.RendererSkia = function(elt, pInst, isMainCanvas) {
   } else {
     this._canvasSurface = CanvasKit.MakeSurface(100, 100);
   }
+  this._skScale = this._pInst._pixelDensity;
   this._cached_canvas = this._canvasSurface.getCanvas();
   this._cached_canvas.save();
+  this._cached_canvas.scale(this._skScale, this._skScale);
 
   this._skStrokeColor = CanvasKit.BLACK;
   this._skStrokeWidth = 1;
@@ -101,8 +103,12 @@ p5.RendererSkia.prototype.resize = function(w, h) {
   } else {
     this._canvasSurface = CanvasKit.MakeSurface(w, h);
   }
+
+  this._skScale = this._pInst._pixelDensity;
   this._cached_canvas = this._canvasSurface.getCanvas();
   this._cached_canvas.save();
+  this._cached_canvas.scale(this._skScale, this._skScale);
+
 };
 
 p5.RendererSkia.prototype.toSkColor = function(...args) {
