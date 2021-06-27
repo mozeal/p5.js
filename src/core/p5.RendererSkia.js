@@ -50,6 +50,7 @@ p5.RendererSkia = function(elt, pInst, isMainCanvas) {
   */
   this._pInst._setProperty('drawingContext', this.drawingContext);
   if (isMainCanvas) {
+    this._pInst.registerMethod('pre', this.preDraw.bind(this));
     this._pInst.registerMethod('post', this.postDraw.bind(this));
   }
   return this;
@@ -57,13 +58,19 @@ p5.RendererSkia = function(elt, pInst, isMainCanvas) {
 
 p5.RendererSkia.prototype = Object.create(p5.Renderer.prototype);
 
+p5.RendererSkia.prototype.preDraw = function() {
+  if (this._retainImage) {
+    this._cached_canvas.drawImage(this._retainImage, 0, 0, null);
+  }
+};
+
 p5.RendererSkia.prototype.postDraw = function() {
   //console.log('testPost', this);
   //console.log(this._canvasSurface);
   if (!this._cached_canvas) {
     this._cached_canvas = this._canvasSurface.getCanvas();
   }
-
+  this._retainImage = this._canvasSurface.makeImageSnapshot();
   this._canvasSurface.flush();
 };
 
