@@ -21,10 +21,8 @@ p5.RendererSkia = function(elt, pInst, isMainCanvas) {
   //  this.canvas.getContext('experimental-webgl', this._pInst._glAttributes);
   this._isMainCanvas = isMainCanvas;
   if (this._isMainCanvas) {
-    console.log('MakeCanvasSurface#1');
     this._canvasSurface = CanvasKit.MakeCanvasSurface(this.canvas);
   } else {
-    console.log('MakeSurface#1');
     this._canvasSurface = CanvasKit.MakeSurface(100, 100);
   }
   this._cached_canvas = this._canvasSurface.getCanvas();
@@ -41,7 +39,7 @@ p5.RendererSkia = function(elt, pInst, isMainCanvas) {
   this._skFillColor = CanvasKit.WHITE;
   this._skFillPaint = new CanvasKit.Paint();
   this._skFillPaint.setStyle(CanvasKit.PaintStyle.Fill);
-  this._skFillPaint.setAntiAlias(true);
+  this._skFillPaint.setAntiAlias(false);
   this._skFillPaint.setColor(this._skFillColor);
 
   /*
@@ -80,7 +78,6 @@ p5.RendererSkia.prototype.postDraw = function() {
 };
 
 p5.RendererSkia.prototype._applyDefaults = function() {
-  console.log('Default');
   this._cachedFillStyle = this._cachedStrokeStyle = undefined;
   this._cachedBlendMode = constants.BLEND;
   this._setFill(constants._DEFAULT_FILL);
@@ -100,10 +97,8 @@ p5.RendererSkia.prototype.resize = function(w, h) {
   );
   */
   if (this._isMainCanvas) {
-    console.log('MakeCanvasSurface#2', w, h);
     this._canvasSurface = CanvasKit.MakeCanvasSurface(this.canvas);
   } else {
-    console.log('MakeSurface#2', w, h);
     this._canvasSurface = CanvasKit.MakeSurface(w, h);
   }
   this._cached_canvas = this._canvasSurface.getCanvas();
@@ -502,7 +497,6 @@ p5.RendererSkia.prototype._acuteArcToBezier = function _acuteArcToBezier(
  *   start <= stop < start + TWO_PI
  */
 p5.RendererSkia.prototype.arc = function(x, y, w, h, start, stop, mode) {
-  const ctx = this.drawingContext;
   const rx = w / 2.0;
   const ry = h / 2.0;
   const epsilon = 0.00001; // Smallest visible angle on displays up to 4K.
@@ -519,45 +513,45 @@ p5.RendererSkia.prototype.arc = function(x, y, w, h, start, stop, mode) {
     start += arcToDraw;
   }
 
+  const path = new CanvasKit.Path();
   // Fill curves
   if (this._doFill) {
-    ctx.beginPath();
     curves.forEach((curve, index) => {
       if (index === 0) {
-        ctx.moveTo(x + curve.ax * rx, y + curve.ay * ry);
+        path.moveTo(x + curve.ax * rx, y + curve.ay * ry);
       }
       // prettier-ignore
-      ctx.bezierCurveTo(x + curve.bx * rx, y + curve.by * ry,
+      path.cubicTo(x + curve.bx * rx, y + curve.by * ry,
                           x + curve.cx * rx, y + curve.cy * ry,
                           x + curve.dx * rx, y + curve.dy * ry);
     });
     if (mode === constants.PIE || mode == null) {
-      ctx.lineTo(x, y);
+      path.lineTo(x, y);
     }
-    ctx.closePath();
-    ctx.fill();
+    path.close();
+    this._cached_canvas.drawPath(path, this._skFillPaint);
   }
 
   // Stroke curves
   if (this._doStroke) {
-    ctx.beginPath();
     curves.forEach((curve, index) => {
       if (index === 0) {
-        ctx.moveTo(x + curve.ax * rx, y + curve.ay * ry);
+        path.moveTo(x + curve.ax * rx, y + curve.ay * ry);
       }
       // prettier-ignore
-      ctx.bezierCurveTo(x + curve.bx * rx, y + curve.by * ry,
+      path.cubicTo(x + curve.bx * rx, y + curve.by * ry,
                           x + curve.cx * rx, y + curve.cy * ry,
                           x + curve.dx * rx, y + curve.dy * ry);
     });
     if (mode === constants.PIE) {
-      ctx.lineTo(x, y);
-      ctx.closePath();
+      path.lineTo(x, y);
+      path.close();
     } else if (mode === constants.CHORD) {
-      ctx.closePath();
+      path.close();
     }
-    ctx.stroke();
+    this._cached_canvas.drawPath(path, this._skStrokePaint);
   }
+  path.delete();
   return this;
 };
 
@@ -617,7 +611,6 @@ p5.RendererSkia.prototype.point = function(x, y) {
 };
 
 p5.RendererSkia.prototype.quad = function(x1, y1, x2, y2, x3, y3, x4, y4) {
-  const ctx = this.drawingContext;
   const doFill = this._doFill,
     doStroke = this._doStroke;
   if (doFill && !doStroke) {
@@ -629,18 +622,19 @@ p5.RendererSkia.prototype.quad = function(x1, y1, x2, y2, x3, y3, x4, y4) {
       return this;
     }
   }
-  ctx.beginPath();
-  ctx.moveTo(x1, y1);
-  ctx.lineTo(x2, y2);
-  ctx.lineTo(x3, y3);
-  ctx.lineTo(x4, y4);
-  ctx.closePath();
-  if (doFill) {
-    ctx.fill();
+  const path = new CanvasKit.Path();
+  path.moveTo(x1, y1);
+  path.lineTo(x2, y2);
+  path.lineTo(x3, y3);
+  path.lineTo(x4, y4);
+  path.close();
+  if (this._doFill) {
+    this._cached_canvas.drawPath(path, this._skFillPaint);
   }
-  if (doStroke) {
-    ctx.stroke();
+  if (this._doStroke) {
+    this._cached_canvas.drawPath(path, this._skStrokePaint);
   }
+  path.delete();
   return this;
 };
 
@@ -727,11 +721,11 @@ p5.RendererSkia.prototype.rect = function(args) {
   if (this._doStroke) {
     this._cached_canvas.drawPath(path, this._skStrokePaint);
   }
+  path.delete();
   return this;
 };
 
 p5.RendererSkia.prototype.triangle = function(args) {
-  const ctx = this.drawingContext;
   const doFill = this._doFill,
     doStroke = this._doStroke;
   const x1 = args[0],
@@ -749,17 +743,18 @@ p5.RendererSkia.prototype.triangle = function(args) {
       return this;
     }
   }
-  ctx.beginPath();
-  ctx.moveTo(x1, y1);
-  ctx.lineTo(x2, y2);
-  ctx.lineTo(x3, y3);
-  ctx.closePath();
+  const path = new CanvasKit.Path();
+  path.moveTo(x1, y1);
+  path.lineTo(x2, y2);
+  path.lineTo(x3, y3);
+  path.close();
   if (doFill) {
-    ctx.fill();
+    this._cached_canvas.drawPath(path, this._skFillPaint);
   }
   if (doStroke) {
-    ctx.stroke();
+    this._cached_canvas.drawPath(path, this._skStrokePaint);
   }
+  path.delete();
 };
 
 p5.RendererSkia.prototype.endShape = function(
@@ -788,8 +783,8 @@ p5.RendererSkia.prototype.endShape = function(
     if (numVerts > 3) {
       const b = [],
         s = 1 - this._curveTightness;
-      this.drawingContext.beginPath();
-      this.drawingContext.moveTo(vertices[1][0], vertices[1][1]);
+      const path = new CanvasKit.Path();
+      path.moveTo(vertices[1][0], vertices[1][1]);
       for (i = 1; i + 2 < numVerts; i++) {
         v = vertices[i];
         b[0] = [v[0], v[1]];
@@ -803,34 +798,28 @@ p5.RendererSkia.prototype.endShape = function(
           vertices[i + 1][1] + (s * vertices[i][1] - s * vertices[i + 2][1]) / 6
         ];
         b[3] = [vertices[i + 1][0], vertices[i + 1][1]];
-        this.drawingContext.bezierCurveTo(
-          b[1][0],
-          b[1][1],
-          b[2][0],
-          b[2][1],
-          b[3][0],
-          b[3][1]
-        );
+        path.cubicTo(b[1][0], b[1][1], b[2][0], b[2][1], b[3][0], b[3][1]);
       }
       if (closeShape) {
-        this.drawingContext.lineTo(vertices[i + 1][0], vertices[i + 1][1]);
+        path.lineTo(vertices[i + 1][0], vertices[i + 1][1]);
       }
       this._doFillStrokeClose(closeShape);
+      path.delete();
     }
   } else if (
     isBezier &&
     (shapeKind === constants.POLYGON || shapeKind === null)
   ) {
-    this.drawingContext.beginPath();
+    const path = new CanvasKit.Path();
     for (i = 0; i < numVerts; i++) {
       if (vertices[i].isVert) {
         if (vertices[i].moveTo) {
-          this.drawingContext.moveTo(vertices[i][0], vertices[i][1]);
+          path.moveTo(vertices[i][0], vertices[i][1]);
         } else {
-          this.drawingContext.lineTo(vertices[i][0], vertices[i][1]);
+          path.lineTo(vertices[i][0], vertices[i][1]);
         }
       } else {
-        this.drawingContext.bezierCurveTo(
+        path.bezierCurveTo(
           vertices[i][0],
           vertices[i][1],
           vertices[i][2],
@@ -841,20 +830,21 @@ p5.RendererSkia.prototype.endShape = function(
       }
     }
     this._doFillStrokeClose(closeShape);
+    path.delete();
   } else if (
     isQuadratic &&
     (shapeKind === constants.POLYGON || shapeKind === null)
   ) {
-    this.drawingContext.beginPath();
+    const path = new CanvasKit.Path();
     for (i = 0; i < numVerts; i++) {
       if (vertices[i].isVert) {
         if (vertices[i].moveTo) {
-          this.drawingContext.moveTo(vertices[i][0], vertices[i][1]);
+          path.moveTo(vertices[i][0], vertices[i][1]);
         } else {
-          this.drawingContext.lineTo(vertices[i][0], vertices[i][1]);
+          path.lineTo(vertices[i][0], vertices[i][1]);
         }
       } else {
-        this.drawingContext.quadraticCurveTo(
+        path.quadraticCurveTo(
           vertices[i][0],
           vertices[i][1],
           vertices[i][2],
@@ -863,6 +853,7 @@ p5.RendererSkia.prototype.endShape = function(
       }
     }
     this._doFillStrokeClose(closeShape);
+    path.delete();
   } else {
     if (shapeKind === constants.POINTS) {
       for (i = 0; i < numVerts; i++) {
@@ -883,11 +874,11 @@ p5.RendererSkia.prototype.endShape = function(
     } else if (shapeKind === constants.TRIANGLES) {
       for (i = 0; i + 2 < numVerts; i += 3) {
         v = vertices[i];
-        this.drawingContext.beginPath();
-        this.drawingContext.moveTo(v[0], v[1]);
-        this.drawingContext.lineTo(vertices[i + 1][0], vertices[i + 1][1]);
-        this.drawingContext.lineTo(vertices[i + 2][0], vertices[i + 2][1]);
-        this.drawingContext.closePath();
+        const path = new CanvasKit.Path();
+        path.moveTo(v[0], v[1]);
+        path.lineTo(vertices[i + 1][0], vertices[i + 1][1]);
+        path.lineTo(vertices[i + 2][0], vertices[i + 2][1]);
+        path.close();
         if (this._doFill) {
           this._pInst.fill(vertices[i + 2][5]);
           this.drawingContext.fill();
@@ -896,13 +887,14 @@ p5.RendererSkia.prototype.endShape = function(
           this._pInst.stroke(vertices[i + 2][6]);
           this.drawingContext.stroke();
         }
+        path.delete();
       }
     } else if (shapeKind === constants.TRIANGLE_STRIP) {
       for (i = 0; i + 1 < numVerts; i++) {
         v = vertices[i];
-        this.drawingContext.beginPath();
-        this.drawingContext.moveTo(vertices[i + 1][0], vertices[i + 1][1]);
-        this.drawingContext.lineTo(v[0], v[1]);
+        const path = new CanvasKit.Path();
+        path.moveTo(vertices[i + 1][0], vertices[i + 1][1]);
+        path.lineTo(v[0], v[1]);
         if (this._doStroke) {
           this._pInst.stroke(vertices[i + 1][6]);
         }
@@ -910,7 +902,7 @@ p5.RendererSkia.prototype.endShape = function(
           this._pInst.fill(vertices[i + 1][5]);
         }
         if (i + 2 < numVerts) {
-          this.drawingContext.lineTo(vertices[i + 2][0], vertices[i + 2][1]);
+          path.lineTo(vertices[i + 2][0], vertices[i + 2][1]);
           if (this._doStroke) {
             this._pInst.stroke(vertices[i + 2][6]);
           }
@@ -918,19 +910,20 @@ p5.RendererSkia.prototype.endShape = function(
             this._pInst.fill(vertices[i + 2][5]);
           }
         }
-        this._doFillStrokeClose(closeShape);
+        this._doFillStrokeClose(path, closeShape);
+        path.delete();
       }
     } else if (shapeKind === constants.TRIANGLE_FAN) {
       if (numVerts > 2) {
         // For performance reasons, try to batch as many of the
         // fill and stroke calls as possible.
-        this.drawingContext.beginPath();
+        const path = new CanvasKit.Path();
         for (i = 2; i < numVerts; i++) {
           v = vertices[i];
-          this.drawingContext.moveTo(vertices[0][0], vertices[0][1]);
-          this.drawingContext.lineTo(vertices[i - 1][0], vertices[i - 1][1]);
-          this.drawingContext.lineTo(v[0], v[1]);
-          this.drawingContext.lineTo(vertices[0][0], vertices[0][1]);
+          path.moveTo(vertices[0][0], vertices[0][1]);
+          path.lineTo(vertices[i - 1][0], vertices[i - 1][1]);
+          path.lineTo(v[0], v[1]);
+          path.lineTo(vertices[0][0], vertices[0][1]);
           // If the next colour is going to be different, stroke / fill now
           if (i < numVerts - 1) {
             if (
@@ -947,40 +940,42 @@ p5.RendererSkia.prototype.endShape = function(
                 this.drawingContext.stroke();
                 this._pInst.stroke(vertices[i + 1][6]);
               }
-              this.drawingContext.closePath();
-              this.drawingContext.beginPath(); // Begin the next one
+              path.close();
+              //this.drawingContext.beginPath(); // Begin the next one
             }
           }
         }
-        this._doFillStrokeClose(closeShape);
+        this._doFillStrokeClose(path, closeShape);
+        path.delete();
       }
     } else if (shapeKind === constants.QUADS) {
       for (i = 0; i + 3 < numVerts; i += 4) {
         v = vertices[i];
-        this.drawingContext.beginPath();
-        this.drawingContext.moveTo(v[0], v[1]);
+        const path = new CanvasKit.Path();
+        path.moveTo(v[0], v[1]);
         for (j = 1; j < 4; j++) {
-          this.drawingContext.lineTo(vertices[i + j][0], vertices[i + j][1]);
+          path.lineTo(vertices[i + j][0], vertices[i + j][1]);
         }
-        this.drawingContext.lineTo(v[0], v[1]);
+        path.lineTo(v[0], v[1]);
         if (this._doFill) {
           this._pInst.fill(vertices[i + 3][5]);
         }
         if (this._doStroke) {
           this._pInst.stroke(vertices[i + 3][6]);
         }
-        this._doFillStrokeClose(closeShape);
+        this._doFillStrokeClose(path, closeShape);
+        path.delete();
       }
     } else if (shapeKind === constants.QUAD_STRIP) {
       if (numVerts > 3) {
         for (i = 0; i + 1 < numVerts; i += 2) {
           v = vertices[i];
-          this.drawingContext.beginPath();
+          const path = new CanvasKit.Path();
           if (i + 3 < numVerts) {
-            this.drawingContext.moveTo(vertices[i + 2][0], vertices[i + 2][1]);
-            this.drawingContext.lineTo(v[0], v[1]);
-            this.drawingContext.lineTo(vertices[i + 1][0], vertices[i + 1][1]);
-            this.drawingContext.lineTo(vertices[i + 3][0], vertices[i + 3][1]);
+            path.moveTo(vertices[i + 2][0], vertices[i + 2][1]);
+            path.lineTo(v[0], v[1]);
+            path.lineTo(vertices[i + 1][0], vertices[i + 1][1]);
+            path.lineTo(vertices[i + 3][0], vertices[i + 3][1]);
             if (this._doFill) {
               this._pInst.fill(vertices[i + 3][5]);
             }
@@ -988,26 +983,28 @@ p5.RendererSkia.prototype.endShape = function(
               this._pInst.stroke(vertices[i + 3][6]);
             }
           } else {
-            this.drawingContext.moveTo(v[0], v[1]);
-            this.drawingContext.lineTo(vertices[i + 1][0], vertices[i + 1][1]);
+            path.moveTo(v[0], v[1]);
+            path.lineTo(vertices[i + 1][0], vertices[i + 1][1]);
           }
-          this._doFillStrokeClose(closeShape);
+          this._doFillStrokeClose(path, closeShape);
+          path.delete();
         }
       }
     } else {
-      this.drawingContext.beginPath();
-      this.drawingContext.moveTo(vertices[0][0], vertices[0][1]);
+      const path = new CanvasKit.Path();
+      path.moveTo(vertices[0][0], vertices[0][1]);
       for (i = 1; i < numVerts; i++) {
         v = vertices[i];
         if (v.isVert) {
           if (v.moveTo) {
-            this.drawingContext.moveTo(v[0], v[1]);
+            path.moveTo(v[0], v[1]);
           } else {
-            this.drawingContext.lineTo(v[0], v[1]);
+            path.lineTo(v[0], v[1]);
           }
         }
       }
-      this._doFillStrokeClose(closeShape);
+      this._doFillStrokeClose(path, closeShape);
+      path.delete();
     }
   }
   isCurve = false;
@@ -1080,7 +1077,7 @@ p5.RendererSkia.prototype._getStroke = function() {
 p5.RendererSkia.prototype._setStroke = function(strokeStyle) {
   if (strokeStyle !== this._cachedStrokeStyle) {
     //this.drawingContext.strokeStyle = strokeStyle;
-    //this._cachedStrokeStyle = strokeStyle;
+    this._cachedStrokeStyle = strokeStyle;
   }
 };
 
@@ -1109,15 +1106,15 @@ p5.RendererSkia.prototype.curve = function(x1, y1, x2, y2, x3, y3, x4, y4) {
 // SHAPE | Vertex
 //////////////////////////////////////////////
 
-p5.RendererSkia.prototype._doFillStrokeClose = function(closeShape) {
+p5.RendererSkia.prototype._doFillStrokeClose = function(path, closeShape) {
   if (closeShape) {
-    this.drawingContext.closePath();
+    path.close();
   }
   if (this._doFill) {
-    this.drawingContext.fill();
+    this._cached_canvas.drawPath(path, this._skFillPaint);
   }
   if (this._doStroke) {
-    this.drawingContext.stroke();
+    this._cached_canvas.drawPath(path, this._skStrokePaint);
   }
 };
 
@@ -1130,7 +1127,7 @@ p5.RendererSkia.prototype.applyMatrix = function(a, b, c, d, e, f) {
 };
 
 p5.RendererSkia.prototype.resetMatrix = function() {
-  console.log('reset Matrix');
+  //console.log('reset Matrix');
   this._cached_canvas.restore();
   this._cached_canvas.save();
   /*
@@ -1145,11 +1142,11 @@ p5.RendererSkia.prototype.resetMatrix = function() {
 };
 
 p5.RendererSkia.prototype.rotate = function(rad) {
-  this.drawingContext.rotate(rad);
+  this._cached_canvas.rotate(degrees(rad), 0, 0);
 };
 
 p5.RendererSkia.prototype.scale = function(x, y) {
-  //this.drawingContext.scale(x, y);
+  this._cached_canvas.scale(x, y);
   return this;
 };
 
@@ -1272,7 +1269,7 @@ p5.RendererSkia.prototype._applyTextProperties = function() {
 // derived renderers should call the base class' push() method
 // to fetch the base style object.
 p5.RendererSkia.prototype.push = function() {
-  this.drawingContext.save();
+  this._cached_canvas.save();
 
   // get the base renderer style
   return p5.Renderer.prototype.push.apply(this);
@@ -1284,7 +1281,7 @@ p5.RendererSkia.prototype.push = function() {
 // derived renderers should pass this object to their base
 // class' pop method
 p5.RendererSkia.prototype.pop = function(style) {
-  this.drawingContext.restore();
+  this._cached_canvas.restore();
   // Re-cache the fill / stroke state
   //this._cachedFillStyle = this.drawingContext.fillStyle;
   //this._cachedStrokeStyle = this.drawingContext.strokeStyle;

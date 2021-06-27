@@ -492,6 +492,9 @@ p5.prototype.redraw = function(n) {
       context._registeredMethods.post.forEach(callMethod);
     }
   } else {
+    const callMethod = f => {
+      f.call(context);
+    };
     context._registeredMethods.post.forEach(callMethod);
   }
 };

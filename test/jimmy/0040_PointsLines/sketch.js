@@ -29,4 +29,3 @@ function setup() {
   point(p4, p2);
   point(p4, p4);
 }
-
