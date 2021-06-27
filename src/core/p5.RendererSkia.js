@@ -819,7 +819,7 @@ p5.RendererSkia.prototype.endShape = function(
           path.lineTo(vertices[i][0], vertices[i][1]);
         }
       } else {
-        path.bezierCurveTo(
+        path.cubicTo(
           vertices[i][0],
           vertices[i][1],
           vertices[i][2],
@@ -829,7 +829,7 @@ p5.RendererSkia.prototype.endShape = function(
         );
       }
     }
-    this._doFillStrokeClose(closeShape);
+    this._doFillStrokeClose(path, closeShape);
     path.delete();
   } else if (
     isQuadratic &&
@@ -844,7 +844,7 @@ p5.RendererSkia.prototype.endShape = function(
           path.lineTo(vertices[i][0], vertices[i][1]);
         }
       } else {
-        path.quadraticCurveTo(
+        path.quadTo(
           vertices[i][0],
           vertices[i][1],
           vertices[i][2],
@@ -852,7 +852,7 @@ p5.RendererSkia.prototype.endShape = function(
         );
       }
     }
-    this._doFillStrokeClose(closeShape);
+    this._doFillStrokeClose(path, closeShape);
     path.delete();
   } else {
     if (shapeKind === constants.POINTS) {
@@ -1086,7 +1086,7 @@ p5.RendererSkia.prototype._setStroke = function(strokeStyle) {
 //////////////////////////////////////////////
 p5.RendererSkia.prototype.bezier = function(x1, y1, x2, y2, x3, y3, x4, y4) {
   this._pInst.beginShape();
-  this._pInst.vertex(x1, y1);
+  this._pInst.vertex(x1, y1, true);
   this._pInst.bezierVertex(x2, y2, x3, y3, x4, y4);
   this._pInst.endShape();
   return this;
