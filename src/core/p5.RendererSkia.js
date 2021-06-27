@@ -62,11 +62,17 @@ p5.RendererSkia.prototype.preDraw = function() {
   if (this._retainImage) {
     this._cached_canvas.drawImage(this._retainImage, 0, 0, null);
   }
+  if (!this._cached_canvas) {
+    this._cached_canvas = this._canvasSurface.getCanvas();
+  }
+  this._cached_canvas.save();
+  this._cached_canvas.scale(this._skScale, this._skScale);
 };
 
 p5.RendererSkia.prototype.postDraw = function() {
-  if (!this._cached_canvas) {
-    this._cached_canvas = this._canvasSurface.getCanvas();
+  this._cached_canvas.restore();
+  if (this._retainImage) {
+    this._retainImage.delete();
   }
   this._retainImage = this._canvasSurface.makeImageSnapshot();
   this._canvasSurface.flush();
@@ -83,6 +89,8 @@ p5.RendererSkia.prototype._applyDefaults = function() {
 
 p5.RendererSkia.prototype.resize = function(w, h) {
   p5.Renderer.prototype.resize.call(this, w, h);
+
+  this._skScale = this._pInst._pixelDensity;
   /*
   this.drawingContext.scale(
     this._pInst._pixelDensity,
@@ -188,8 +196,10 @@ p5.RendererSkia.prototype.image = function(
       return;
     }
     this._cached_canvas.drawImage(image, dx, dy, null);
+    image.delete();
     return;
   }
+  /*
   let cnv;
   if (img.gifProperties) {
     img._animateGif(this._pInst);
@@ -233,6 +243,7 @@ p5.RendererSkia.prototype.image = function(
       throw e;
     }
   }
+  */
 };
 
 p5.RendererSkia.prototype._getTintedImageCanvas = function(img) {

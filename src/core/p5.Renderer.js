@@ -67,6 +67,7 @@ p5.Renderer = function(elt, pInst, isMainCanvas) {
   this._skStrokePaint = null;
   this._skStrokeWidth = 1;
   this._retainImage = null;
+  this._skScale = 1;
 };
 
 p5.Renderer.prototype = Object.create(p5.Element.prototype);
