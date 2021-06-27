@@ -19,10 +19,12 @@ p5.RendererSkia = function(elt, pInst, isMainCanvas) {
   //this.drawingContext =
   //  this.canvas.getContext('webgl', this._pInst._glAttributes) ||
   //  this.canvas.getContext('experimental-webgl', this._pInst._glAttributes);
-
-  if (isMainCanvas) {
-    this._canvasSurface = CanvasKit.MakeSWCanvasSurface(this.canvas);
+  this._isMainCanvas = isMainCanvas;
+  if (this._isMainCanvas) {
+    console.log('MakeCanvasSurface#1');
+    this._canvasSurface = CanvasKit.MakeCanvasSurface(this.canvas);
   } else {
+    console.log('MakeSurface#1');
     this._canvasSurface = CanvasKit.MakeSurface(100, 100);
   }
   this._cached_canvas = this._canvasSurface.getCanvas();
@@ -82,7 +84,13 @@ p5.RendererSkia.prototype.resize = function(w, h) {
     this._pInst._pixelDensity
   );
   */
-  this._canvasSurface = CanvasKit.MakeSWCanvasSurface(this.canvas);
+  if (this._isMainCanvas) {
+    console.log('MakeCanvasSurface#2', w, h);
+    this._canvasSurface = CanvasKit.MakeCanvasSurface(this.canvas);
+  } else {
+    console.log('MakeSurface#2', w, h);
+    this._canvasSurface = CanvasKit.MakeSurface(w, h);
+  }
   this._cached_canvas = this._canvasSurface.getCanvas();
 };
 

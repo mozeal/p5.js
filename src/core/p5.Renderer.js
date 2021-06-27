@@ -58,6 +58,7 @@ p5.Renderer = function(elt, pInst, isMainCanvas) {
   this._fillSet = false;
   this._leadingSet = false;
 
+  this._isMainCanvas = false;
   this._canvasSurface = null;
   this._cached_canvas = null;
   this._skFillColor = CanvasKit.WHITE;
