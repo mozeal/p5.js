@@ -47,8 +47,8 @@ p5.RendererSkia = function(elt, pInst, isMainCanvas) {
   this.drawingContext =
     this.canvas.getContext('webgl', this._pInst._glAttributes) ||
     this.canvas.getContext('experimental-webgl', this._pInst._glAttributes); 
-  */
   this._pInst._setProperty('drawingContext', this.drawingContext);
+  */
   if (isMainCanvas) {
     this._pInst.registerMethod('pre', this.preDraw.bind(this));
     this._pInst.registerMethod('post', this.postDraw.bind(this));
@@ -65,8 +65,6 @@ p5.RendererSkia.prototype.preDraw = function() {
 };
 
 p5.RendererSkia.prototype.postDraw = function() {
-  //console.log('testPost', this);
-  //console.log(this._canvasSurface);
   if (!this._cached_canvas) {
     this._cached_canvas = this._canvasSurface.getCanvas();
   }
