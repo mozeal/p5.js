@@ -28,6 +28,7 @@ p5.RendererSkia = function(elt, pInst, isMainCanvas) {
     this._canvasSurface = CanvasKit.MakeSurface(100, 100);
   }
   this._cached_canvas = this._canvasSurface.getCanvas();
+  this._cached_canvas.save();
 
   this._skStrokeColor = CanvasKit.BLACK;
   this._skStrokeWidth = 1;
@@ -79,6 +80,7 @@ p5.RendererSkia.prototype.postDraw = function() {
 };
 
 p5.RendererSkia.prototype._applyDefaults = function() {
+  console.log('Default');
   this._cachedFillStyle = this._cachedStrokeStyle = undefined;
   this._cachedBlendMode = constants.BLEND;
   this._setFill(constants._DEFAULT_FILL);
@@ -105,6 +107,7 @@ p5.RendererSkia.prototype.resize = function(w, h) {
     this._canvasSurface = CanvasKit.MakeSurface(w, h);
   }
   this._cached_canvas = this._canvasSurface.getCanvas();
+  this._cached_canvas.save();
 };
 
 p5.RendererSkia.prototype.toSkColor = function(...args) {
@@ -1127,6 +1130,9 @@ p5.RendererSkia.prototype.applyMatrix = function(a, b, c, d, e, f) {
 };
 
 p5.RendererSkia.prototype.resetMatrix = function() {
+  console.log('reset Matrix');
+  this._cached_canvas.restore();
+  this._cached_canvas.save();
   /*
   this.drawingContext.setTransform(1, 0, 0, 1, 0, 0);
   
@@ -1153,7 +1159,8 @@ p5.RendererSkia.prototype.translate = function(x, y) {
     y = x.y;
     x = x.x;
   }
-  this.drawingContext.translate(x, y);
+  this._cached_canvas.translate(x, y);
+  //this.drawingContext.translate(x, y);
   return this;
 };
 

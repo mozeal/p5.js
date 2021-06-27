@@ -491,6 +491,8 @@ p5.prototype.redraw = function(n) {
       }
       context._registeredMethods.post.forEach(callMethod);
     }
+  } else {
+    context._registeredMethods.post.forEach(callMethod);
   }
 };
 
