@@ -108,7 +108,6 @@ p5.RendererSkia.prototype.resize = function(w, h) {
   this._cached_canvas = this._canvasSurface.getCanvas();
   this._cached_canvas.save();
   this._cached_canvas.scale(this._skScale, this._skScale);
-
 };
 
 p5.RendererSkia.prototype.toSkColor = function(...args) {

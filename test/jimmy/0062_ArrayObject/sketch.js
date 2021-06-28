@@ -1,4 +1,3 @@
-
 class Module {
   constructor(xOff, yOff, x, y, speed, unit) {
     this.xOff = xOff;
