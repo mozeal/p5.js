@@ -3,15 +3,14 @@ function setup() {
   strokeWeight(3);
   //center squares to match circles
   rectMode(CENTER);
-  
+
   //draw rects to mark far sides
   noStroke();
-  fill("beige");
+  fill('beige');
   rect(5, height / 2, 10, height);
   rect(width - 5, height / 2, 10, height);
-  fill("orange");
-  stroke("brown");
-
+  fill('orange');
+  stroke('brown');
 }
 
 function draw() {
@@ -29,5 +28,4 @@ function draw() {
   if (mouseX > width - 10) {
     square(width / 2, mouseY, 20);
   }
-
 }
