@@ -1,6 +1,7 @@
 let img; // Declare variable 'img'.
 
 function setup() {
+  console.log('loadimg');
   createCanvas(720, 400);
   img = loadImage('../assets/moonwalk.jpg'); // Load the image
 }

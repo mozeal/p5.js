@@ -110,6 +110,29 @@ p5.prototype.loadImage = function(path, successCallback, failureCallback) {
           }
         );
       } else {
+        response.arrayBuffer().then(
+          arrayBuffer => {
+            if (arrayBuffer) {
+              _createSkImage(
+                arrayBuffer,
+                pImg,
+                successCallback,
+                failureCallback,
+                (pImg => {
+                  self._decrementPreload();
+                }).bind(self)
+              );
+            }
+          },
+          e => {
+            if (typeof failureCallback === 'function') {
+              failureCallback(e);
+            } else {
+              console.error(e);
+            }
+          }
+        );
+        /*
         // Non-GIF Section
         const img = new Image();
 
@@ -145,6 +168,7 @@ p5.prototype.loadImage = function(path, successCallback, failureCallback) {
         }
         // start loading the image
         img.src = path;
+        */
       }
       pImg.modified = true;
     })
@@ -158,6 +182,34 @@ p5.prototype.loadImage = function(path, successCallback, failureCallback) {
     });
   return pImg;
 };
+
+async function _createSkImage(
+  imgData,
+  pImg,
+  successCallback,
+  failureCallback,
+  finishCallback
+) {
+  const blob = new Blob([imgData]);
+  // ImageBitmap is not supported in Safari
+  const imageBitmap = await createImageBitmap(blob);
+  if (!imageBitmap) {
+    if (typeof failureCallback === 'function') {
+      failureCallback(e);
+    } else {
+      console.error(e);
+    }
+  } else {
+    pImg.skImg = await CanvasKit.MakeImageFromCanvasImageSource(imageBitmap);
+    pImg.width = pImg.skImg.width();
+    pImg.height = pImg.skImg.height();
+  }
+
+  if (typeof successCallback === 'function') {
+    successCallback(pImg);
+  }
+  finishCallback();
+}
 
 /**
  * Helper function for loading GIF-based images
@@ -620,10 +672,10 @@ p5.prototype._getTintedImageCanvas = function(img) {
     const b = pixels[i + 2];
     const a = pixels[i + 3];
 
-    newPixels[i] = r * this._renderer._tint[0] / 255;
-    newPixels[i + 1] = g * this._renderer._tint[1] / 255;
-    newPixels[i + 2] = b * this._renderer._tint[2] / 255;
-    newPixels[i + 3] = a * this._renderer._tint[3] / 255;
+    newPixels[i] = (r * this._renderer._tint[0]) / 255;
+    newPixels[i + 1] = (g * this._renderer._tint[1]) / 255;
+    newPixels[i + 2] = (b * this._renderer._tint[2]) / 255;
+    newPixels[i + 3] = (a * this._renderer._tint[3]) / 255;
   }
 
   tmpCtx.putImageData(id, 0, 0);

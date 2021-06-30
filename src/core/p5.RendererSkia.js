@@ -125,8 +125,12 @@ p5.RendererSkia.prototype.toSkColor = function(...args) {
 //////////////////////////////////////////////
 
 p5.RendererSkia.prototype.background = function(...args) {
-  let color = this.toSkColor(...args);
-  this._cached_canvas.clear(color);
+  if (args[0] instanceof p5.Image) {
+    this._pInst.image(args[0], 0, 0, this.width, this.height);
+  } else {
+    let color = this.toSkColor(...args);
+    this._cached_canvas.clear(color);
+  }
 };
 
 p5.RendererSkia.prototype.clear = function() {
@@ -191,15 +195,32 @@ p5.RendererSkia.prototype.image = function(
   dWidth,
   dHeight
 ) {
-  if (img._renderer && img._renderer._canvasSurface) {
-    //console.log(img._renderer._canvasSurface);
-    const image = img._renderer._canvasSurface.makeImageSnapshot();
-    if (!image) {
-      //console.error('no snapshot');
-      return;
+  if (img instanceof p5.Graphics) {
+    if (img._renderer._canvasSurface) {
+      //console.log(img._renderer._canvasSurface);
+      const image = img._renderer._canvasSurface.makeImageSnapshot();
+      if (!image) {
+        //console.error('no snapshot');
+        return;
+      }
+      this._cached_canvas.drawImageRect(
+        image,
+        CanvasKit.XYWHRect(sx, sy, sWidth, sHeight),
+        CanvasKit.XYWHRect(dx, dy, dWidth, dHeight),
+        null
+      );
+      image.delete();
     }
-    this._cached_canvas.drawImage(image, dx, dy, null);
-    image.delete();
+    return;
+  } else {
+    if (img.skImg) {
+      this._cached_canvas.drawImageRect(
+        img.skImg,
+        CanvasKit.XYWHRect(sx, sy, sWidth, sHeight),
+        CanvasKit.XYWHRect(dx, dy, dWidth, dHeight),
+        null
+      );
+    }
     return;
   }
   /*
