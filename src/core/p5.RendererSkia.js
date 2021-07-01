@@ -110,7 +110,7 @@ p5.RendererSkia.prototype.resize = function(w, h) {
   this._cached_canvas.scale(this._skScale, this._skScale);
 };
 
-p5.RendererSkia.prototype.toSkColor = function(...args) {
+p5.RendererSkia.prototype.ArgsToSkColor = function(...args) {
   const _col = this._pInst.color(...args);
   const _r = _col.levels[0] / 255;
   const _g = _col.levels[1] / 255;
@@ -118,6 +118,23 @@ p5.RendererSkia.prototype.toSkColor = function(...args) {
   const _a = _col.levels[3] / 255;
   //console.log(_r, _g, _b, _a);
   return CanvasKit.Color4f(_r, _g, _b, _a);
+};
+
+p5.RendererSkia.prototype.P5ColorToSkColor = function(color, isOpaque = false) {
+  if (isOpaque) {
+    return CanvasKit.Color4f(
+      color[0] / 255,
+      color[1] / 255,
+      color[2] / 255,
+      1.0
+    );
+  }
+  return CanvasKit.Color4f(
+    color[0] / 255,
+    color[1] / 255,
+    color[2] / 255,
+    color[3] / 255
+  );
 };
 
 //////////////////////////////////////////////
@@ -128,7 +145,7 @@ p5.RendererSkia.prototype.background = function(...args) {
   if (args[0] instanceof p5.Image) {
     this._pInst.image(args[0], 0, 0, this.width, this.height);
   } else {
-    let color = this.toSkColor(...args);
+    let color = this.ArgsToSkColor(...args);
     this._cached_canvas.clear(color);
   }
 };
@@ -139,12 +156,12 @@ p5.RendererSkia.prototype.clear = function() {
 };
 
 p5.RendererSkia.prototype.fill = function(...args) {
-  this._skFillColor = this.toSkColor(...args);
+  this._skFillColor = this.ArgsToSkColor(...args);
   this._skFillPaint.setColor(this._skFillColor);
 };
 
 p5.RendererSkia.prototype.stroke = function(...args) {
-  this._skStrokeColor = this.toSkColor(...args);
+  this._skStrokeColor = this.ArgsToSkColor(...args);
   this._skStrokePaint.setColor(this._skStrokeColor);
 };
 
@@ -195,6 +212,65 @@ p5.RendererSkia.prototype.image = function(
   dWidth,
   dHeight
 ) {
+  let paint = new CanvasKit.Paint();
+  paint.setStyle(CanvasKit.PaintStyle.Fill);
+  paint.setAntiAlias(true);
+  let _cmode = false;
+
+  /*
+  kClear,         //!< r = 0
+  kSrc,           //!< r = s
+  kDst,           //!< r = d
+  kSrcOver,       //!< r = s + (1-sa)*d
+  kDstOver,       //!< r = d + (1-da)*s
+  kSrcIn,         //!< r = s * da
+  kDstIn,         //!< r = d * sa
+  kSrcOut,        //!< r = s * (1-da)
+  kDstOut,        //!< r = d * (1-sa)
+  kSrcATop,       //!< r = s*da + d*(1-sa)
+  kDstATop,       //!< r = d*sa + s*(1-da)
+  kXor,           //!< r = s*(1-da) + d*(1-sa)
+  kPlus,          //!< r = min(s + d, 1)
+  kModulate,      //!< r = s*d
+  kScreen,        //!< r = s + d - s*d
+
+  kOverlay,       //!< multiply or screen, depending on destination
+  kDarken,        //!< rc = s + d - max(s*da, d*sa), ra = kSrcOver
+  kLighten,       //!< rc = s + d - min(s*da, d*sa), ra = kSrcOver
+  kColorDodge,    //!< brighten destination to reflect source
+  kColorBurn,     //!< darken destination to reflect source
+  kHardLight,     //!< multiply or screen, depending on source
+  kSoftLight,     //!< lighten or darken, depending on source
+  kDifference,    //!< rc = s + d - 2*(min(s*da, d*sa)), ra = kSrcOver
+  kExclusion,     //!< rc = s + d - two(s*d), ra = kSrcOver
+  kMultiply,      //!< r = s*(1-da) + d*(1-sa) + s*d
+
+  kHue,           //!< hue of source with saturation and luminosity of destination
+  kSaturation,    //!< saturation of source with hue and luminosity of destination
+  kColor,         //!< hue and saturation of source with luminosity of destination
+  kLuminosity,    //!< luminosity of source with hue and saturation of destination
+
+  kLastCoeffMode     = kScreen,     //!< last porter duff blend mode
+  kLastSeparableMode = kMultiply,   //!< last blend mode operating separately on components
+  kLastMode          = kLuminosity, //!< last valid value
+  */
+
+  if (this._tint) {
+    const colorRGB = this.P5ColorToSkColor(this._tint, true);
+    const color = this.P5ColorToSkColor(this._tint, _cmode);
+
+    const colf = CanvasKit.ColorFilter.MakeBlend(
+      colorRGB,
+      CanvasKit.BlendMode.Modulate
+    );
+    const alphaf = CanvasKit.ColorFilter.MakeBlend(
+      color,
+      CanvasKit.BlendMode.DstATop
+    );
+    const combindF = CanvasKit.ColorFilter.MakeCompose(alphaf, colf);
+
+    paint.setColorFilter(combindF);
+  }
   if (img instanceof p5.Graphics) {
     if (img._renderer._canvasSurface) {
       //console.log(img._renderer._canvasSurface);
@@ -207,7 +283,7 @@ p5.RendererSkia.prototype.image = function(
         image,
         CanvasKit.XYWHRect(sx, sy, sWidth, sHeight),
         CanvasKit.XYWHRect(dx, dy, dWidth, dHeight),
-        null
+        paint
       );
       image.delete();
     }
@@ -218,7 +294,7 @@ p5.RendererSkia.prototype.image = function(
         img.skImg,
         CanvasKit.XYWHRect(sx, sy, sWidth, sHeight),
         CanvasKit.XYWHRect(dx, dy, dWidth, dHeight),
-        null
+        paint
       );
     }
     return;
