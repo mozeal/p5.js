@@ -637,6 +637,11 @@ p5.Image.prototype.mask = function(p5Image) {
   if (p5Image === undefined) {
     p5Image = this;
   }
+  if (this.skImg && p5Image.skImg) {
+    this.skImgMask = p5Image.skImg;
+    return;
+  }
+
   const currBlend = this.drawingContext.globalCompositeOperation;
 
   let scaleFactor = 1;

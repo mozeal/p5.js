@@ -268,9 +268,39 @@ p5.RendererSkia.prototype.image = function(
       CanvasKit.BlendMode.DstATop
     );
     const combindF = CanvasKit.ColorFilter.MakeCompose(alphaf, colf);
-
     paint.setColorFilter(combindF);
   }
+
+  if (img.skImg && img.skImgMask) {
+    if (!img.skSurfaceMask) {
+      img.skSurfaceMask = CanvasKit.MakeSurface(
+        img.skImgMask.width(),
+        img.skImgMask.height()
+      );
+      let cv = img.skSurfaceMask.getCanvas();
+      cv.clear(CanvasKit.TRANSPARENT);
+      cv.drawImage(img.skImgMask, 0, 0, null);
+
+      let p = new CanvasKit.Paint();
+      p.setStyle(CanvasKit.PaintStyle.Fill);
+      p.setBlendMode(CanvasKit.BlendMode.SrcIn);
+      cv.drawImage(img.skImg, 0, 0, p);
+    }
+    const image = img.skSurfaceMask.makeImageSnapshot();
+    if (!image) {
+      //console.error('no snapshot');
+      return;
+    }
+    this._cached_canvas.drawImageRect(
+      image,
+      CanvasKit.XYWHRect(sx, sy, sWidth, sHeight),
+      CanvasKit.XYWHRect(dx, dy, dWidth, dHeight),
+      paint
+    );
+    image.delete();
+    return;
+  }
+
   if (img instanceof p5.Graphics) {
     if (img._renderer._canvasSurface) {
       //console.log(img._renderer._canvasSurface);
