@@ -200,7 +200,7 @@ p5.Image = function(width, height) {
    * let pink = color(255, 102, 204);
    * let img = createImage(66, 66);
    * img.loadPixels();
-   * for (let i = 0; i < 4 * (width * height / 2); i += 4) {
+   * for (let i = 0; i < 4 * ((width * height) / 2); i += 4) {
    *   img.pixels[i] = red(pink);
    *   img.pixels[i + 1] = green(pink);
    *   img.pixels[i + 2] = blue(pink);
@@ -273,7 +273,7 @@ p5.Image.prototype._setProperty = function(prop, value) {
  *
  * function setup() {
  *   myImage.loadPixels();
- *   halfImage = 4 * myImage.width * myImage.height / 2;
+ *   halfImage = (4 * myImage.width * myImage.height) / 2;
  *   for (let i = 0; i < halfImage; i++) {
  *     myImage.pixels[i + halfImage] = myImage.pixels[i];
  *   }
@@ -320,7 +320,7 @@ p5.Image.prototype.loadPixels = function() {
  *
  * function setup() {
  *   myImage.loadPixels();
- *   halfImage = 4 * myImage.width * myImage.height / 2;
+ *   halfImage = (4 * myImage.width * myImage.height) / 2;
  *   for (let i = 0; i < halfImage; i++) {
  *     myImage.pixels[i + halfImage] = myImage.pixels[i];
  *   }
@@ -479,9 +479,9 @@ p5.Image.prototype.resize = function(width, height) {
     width = this.canvas.width;
     height = this.canvas.height;
   } else if (width === 0) {
-    width = this.canvas.width * height / this.canvas.height;
+    width = (this.canvas.width * height) / this.canvas.height;
   } else if (height === 0) {
-    height = this.canvas.height * width / this.canvas.width;
+    height = (this.canvas.height * width) / this.canvas.width;
   }
 
   width = Math.floor(width);
@@ -498,8 +498,8 @@ p5.Image.prototype.resize = function(width, height) {
       let pos = 0;
       for (let y = 0; y < dst.height; y++) {
         for (let x = 0; x < dst.width; x++) {
-          const srcX = Math.floor(x * src.width / dst.width);
-          const srcY = Math.floor(y * src.height / dst.height);
+          const srcX = Math.floor((x * src.width) / dst.width);
+          const srcY = Math.floor((y * src.height) / dst.height);
           let srcPos = (srcY * src.width + srcX) * 4;
           dst.data[pos++] = src.data[srcPos++]; // R
           dst.data[pos++] = src.data[srcPos++]; // G

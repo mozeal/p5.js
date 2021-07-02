@@ -155,7 +155,6 @@
     "not dead"
   ],
   "author": "",
-  "dependencies": {},
   "husky": {
     "hooks": {
       "pre-commit": "lint-staged"
